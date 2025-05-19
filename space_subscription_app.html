@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZZZone - Space Subscription for Young Creators</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+  <style>
+    .btn-orange { background-color: #EF5F3A !important; color: #fff !important; }
+    .btn-orange:hover { background-color: #d94e25 !important; }
+    .highlight-purple { color: #8972FE !important; }
+    .bg-purple { background-color: #8972FE !important; color: #fff !important; }
+    .ikea-dropdown { border-radius: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #eee; }
+    .ikea-dropdown:focus { border-color: #8972FE; box-shadow: 0 0 0 2px #8972FE33; }
+  </style>
+</head>
+<body class="bg-gray-50" x-data="spaceApp()">
+  <!-- Header -->
+  <header class="bg-white shadow sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-2xl font-bold cursor-pointer" style="color:#8972FE" @click="resetApp">ZZZone</h1>
+      <span class="text-gray-500 hidden sm:block">The space subscription platform for young creators</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Home Page -->
+    <section x-show="page==='home'" x-cloak>
+      <!-- Search & Filter -->
+      <div class="flex flex-col md:flex-row md:items-center gap-4 mb-8">
+        <input type="text" x-model="search" placeholder="Search for spaces..." class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"/>
+        <select x-model="filterType" class="px-4 py-2 ikea-dropdown focus:outline-none focus:ring-2" style="min-width:160px;">
+          <option value="">All Types</option>
+          <template x-for="type in spaceTypes" :key="type">
+            <option x-text="type"></option>
+          </template>
+        </select>
+      </div>
+      <!-- Space Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <template x-for="space in filteredSpaces()" :key="space.id">
+          <div class="bg-white rounded-[24px] shadow hover:shadow-lg transition cursor-pointer overflow-hidden flex flex-col">
+            <img :src="space.image" alt="space image" class="w-full h-48 object-cover">
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <h2 class="text-lg font-semibold mb-1 text-black" x-text="space.name"></h2>
+                <div class="text-sm text-gray-500 mb-2" x-text="space.type"></div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-lg" style="color:#EF5F3A" x-text="'$'+space.price+'/hr'"></span>
+                  <span class="text-xs bg-purple px-2 py-1 rounded" x-text="space.suitable.join(', ')"></span>
+                </div>
+              </div>
+              <button class="mt-2 btn-orange w-full py-2 rounded-lg font-bold transition" @click.stop="viewDetails(space)">More Details</button>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="filteredSpaces().length===0" class="text-center text-gray-400 mt-12">No spaces found</div>
+    </section>
+
+    <!-- Detail Page -->
+    <section x-show="page==='detail'" x-cloak>
+      <button class="mb-4 highlight-purple hover:underline" @click="page='home'">← Back</button>
+      <div class="bg-white rounded-[24px] shadow p-6 flex flex-col md:flex-row gap-8">
+        <img :src="selectedSpace.image" alt="space image" class="w-full md:w-1/2 h-64 object-cover rounded-[24px]">
+        <div class="flex-1">
+          <h2 class="text-2xl font-bold mb-2 text-black" x-text="selectedSpace.name"></h2>
+          <div class="text-gray-500 mb-2" x-text="selectedSpace.type"></div>
+          <!-- Icon Info Row -->
+          <div class="flex items-center gap-6 mb-4">
+            <div class="flex items-center gap-1 text-gray-700">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A9 9 0 1112 21a9 9 0 01-6.879-3.196z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span x-text="selectedSpace.capacity+' people'"></span>
+            </div>
+            <div class="flex items-center gap-1 text-gray-700">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="8" rx="2"/><path d="M6 8v2m4-2v2m4-2v2m4-2v2"/></svg>
+              <span x-text="selectedSpace.area+'㎡'"></span>
+            </div>
+            <div class="flex items-center gap-1 text-gray-700">
+              <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.53 16.11a6 6 0 016.94 0M5.07 13.07a10 10 0 0113.86 0M1.64 10.03a14 14 0 0120.72 0"/><circle cx="12" cy="20" r="1"/></svg>
+              <span>WiFi</span>
+            </div>
+          </div>
+          <div class="mb-4 text-gray-700" style="min-height:180px;max-width:100%">
+            <span x-text="selectedSpace.description"></span>
+          </div>
+          <div class="mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-location-dot text-purple-400"></i>
+            <span class="font-semibold">Address:</span>
+            <span x-text="selectedSpace.address"></span>
+            <a :href="'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(selectedSpace.address)" target="_blank" class="ml-2 text-blue-500 underline flex items-center gap-1"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
+          </div>
+          <div class="mb-4">
+            <label class="block font-semibold mb-2 highlight-purple">Choose extra services:</label>
+            <div class="flex flex-wrap gap-4">
+              <template x-for="service in extraServices" :key="service.id">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" :value="service.id" :checked="selectedServices.includes(service.id)" @change="toggleService(service.id)" class="form-checkbox" style="accent-color:#EF5F3A">
+                  <span x-text="service.name+' ($'+service.price+')'"></span>
+                </label>
+              </template>
+            </div>
+            <div class="text-xs text-gray-400 mt-1">You can select one or more services.</div>
+          </div>
+          <div class="mb-4">
+            <label class="block font-semibold mb-2 highlight-purple">Select date & time:</label>
+            <input type="date" x-model="bookingDate" class="border rounded px-2 py-1 mr-2">
+            <input type="time" x-model="bookingTime" class="border rounded px-2 py-1">
+            <input type="number" min="1" x-model="bookingHours" class="border rounded px-2 py-1 ml-2 w-20" placeholder="Hours">
+          </div>
+          <button class="mt-4 w-full btn-orange py-2 rounded-lg font-bold transition" @click="bookSpace">Book Now</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking Success Page -->
+    <section x-show="page==='success'" x-cloak>
+      <div class="bg-white rounded-[24px] shadow p-8 max-w-xl mx-auto text-center">
+        <h2 class="text-2xl font-bold mb-4" style="color:#38b000">Booking Successful!</h2>
+        <div class="mb-4">
+          <div class="text-lg font-semibold mb-2">Space: <span class="highlight-purple" x-text="selectedSpace.name"></span></div>
+          <div class="text-gray-500 mb-2">Time: <span x-text="(bookingDate ? bookingDate : 'Default')+' '+(bookingTime ? bookingTime : 'Default')+' · '+bookingHours+'h'"></span></div>
+          <div class="text-gray-500 mb-2">Extra services: <span x-text="selectedServices.length ? extraServices.filter(s=>selectedServices.includes(s.id)).map(s=>s.name).join(', ') : 'None'"></span></div>
+        </div>
+        <div class="mb-6">
+          <div class="text-xl font-bold">Total: <span class="highlight-purple" x-text="'$'+totalPrice"></span></div>
+        </div>
+        <div class="mb-4">
+          <div class="font-semibold mb-2 highlight-purple">Timeline before your event</div>
+          <div class="flex flex-col items-start gap-2">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+              <span>Booking confirmed</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-purple rounded-full"></span>
+              <span>Reminder 1 day before</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3" style="background:#EF5F3A"></span>
+              <span>Check-in on event day</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+              <span>Cleaning after event</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-center gap-4 mt-4">
+          <button class="btn-orange px-4 py-2 rounded-lg font-bold flex items-center gap-2" @click="shareBooking"><i class="fa-solid fa-share-nodes"></i> Share</button>
+          <button class="btn-orange px-4 py-2 rounded-lg font-bold" @click="resetApp">Back to Home</button>
+        </div>
+        <div x-show="showShare" class="mt-4">
+          <div class="mb-2 font-semibold">Share to:</div>
+          <div class="flex justify-center gap-4">
+            <a :href="shareLinks.wechat" target="_blank" title="WeChat"><i class="fa-brands fa-weixin fa-2x text-green-500"></i></a>
+            <a :href="shareLinks.qq" target="_blank" title="QQ"><i class="fa-brands fa-qq fa-2x text-blue-400"></i></a>
+            <a :href="shareLinks.weibo" target="_blank" title="Weibo"><i class="fa-brands fa-weibo fa-2x text-red-400"></i></a>
+            <a :href="shareLinks.twitter" target="_blank" title="Twitter"><i class="fa-brands fa-twitter fa-2x text-blue-400"></i></a>
+            <a :href="shareLinks.facebook" target="_blank" title="Facebook"><i class="fa-brands fa-facebook fa-2x text-blue-700"></i></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Alpine.js App Logic -->
+  <script>
+    function spaceApp() {
+      return {
+        page: 'home',
+        search: '',
+        filterType: '',
+        showShare: false,
+        shareLinks: {},
+        spaceTypes: ['Meeting Room', 'Party Space', 'Workshop', 'Exhibition Hall', 'Studio'],
+        spaces: [
+          {
+            id: 1,
+            name: 'Downtown Meeting Space',
+            type: 'Meeting Room',
+            price: 30,
+            suitable: ['Meeting', 'Lecture'],
+            image: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=600&q=80',
+            description: 'A premium meeting space in the city center, equipped with projector, whiteboard, and high-speed WiFi. Perfect for business events, workshops, and team meetings. The space features ergonomic chairs, a large conference table, and natural lighting. With a capacity for up to 20 people, it is ideal for both formal and informal gatherings. The venue offers complimentary coffee and tea, and the staff is available to assist with any technical needs. The location is easily accessible by public transport and has nearby parking. High-speed WiFi ensures seamless connectivity for all participants. The room is soundproofed for privacy and focus. Additional amenities include a printer, flip chart, and video conferencing equipment. The modern interior design creates a professional yet welcoming atmosphere. Whether you are hosting a board meeting, a training session, or a brainstorming workshop, this space adapts to your needs. The flexible layout allows for different seating arrangements. Catering services can be arranged upon request. The venue is surrounded by restaurants and cafes, making it convenient for breaks or after-event networking. The building is wheelchair accessible. Security and cleaning services are included. Book now to secure a productive and inspiring environment for your next event. Our team is committed to making your experience smooth and successful. Contact us for custom requests or special arrangements. We look forward to welcoming you at Downtown Meeting Space. This is the perfect place for your next big idea to come to life. Reserve your spot today and enjoy a hassle-free event experience at the heart of the city.',
+            capacity: 20,
+            area: 50,
+            address: '123 Main St, City Center, Metropolis',
+          },
+          {
+            id: 2,
+            name: 'Creative Party Space',
+            type: 'Party Space',
+            price: 50,
+            suitable: ['Party', 'Gathering'],
+            image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+            description: 'Spacious and bright, with sound and lighting system. Ideal for birthdays and parties. The venue features a dance floor, DJ booth, and customizable lighting to set the perfect mood. There is a lounge area with comfortable seating and a bar counter for refreshments. The space can accommodate up to 40 guests and is equipped with a high-quality sound system. Decorations can be tailored to your event theme. The location is close to public transport and has ample parking. Security staff are present during events to ensure safety. The party space is cleaned and sanitized before each booking. Catering and drink packages are available. The venue is suitable for both daytime and evening events. There is a photo booth for capturing memories. The staff can assist with event planning and setup. The space is wheelchair accessible. Book your next celebration at Creative Party Space and make it an unforgettable experience for you and your guests. Contact us for special requests or to arrange a tour of the venue. We are dedicated to helping you create the perfect party atmosphere. Reserve now and let the fun begin!',
+            capacity: 40,
+            area: 120,
+            address: '456 Celebration Ave, Downtown, Metropolis',
+          },
+          {
+            id: 3,
+            name: 'Art Exhibition Hall',
+            type: 'Exhibition Hall',
+            price: 80,
+            suitable: ['Exhibition', 'Launch'],
+            image: 'https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=600&q=80',
+            description: 'Modern exhibition hall, suitable for art shows and product launches. The hall features high ceilings, adjustable lighting, and movable walls for flexible layouts. It can host up to 100 visitors at a time. The space is climate-controlled to protect artworks and installations. There is a reception area for guests and a storage room for equipment. The venue is equipped with security cameras and staff for safety. Audio-visual equipment is available for presentations and launches. The location is easily accessible and has nearby parking. The hall is wheelchair accessible. On-site staff can assist with setup and logistics. The venue is ideal for solo or group exhibitions, pop-up events, and product launches. Catering and refreshment services can be arranged. The modern design provides a neutral backdrop for any creative vision. Book Art Exhibition Hall for your next event and impress your audience with a professional setting. Contact us for a tour or to discuss your requirements. We are committed to supporting artists and creators. Reserve your date today and bring your vision to life in our versatile exhibition space.',
+            capacity: 100,
+            area: 300,
+            address: '789 Gallery Rd, Arts District, Metropolis',
+          },
+          {
+            id: 4,
+            name: 'Multi-purpose Studio',
+            type: 'Studio',
+            price: 40,
+            suitable: ['Photography', 'Recording'],
+            image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80',
+            description: 'Professional studio with lighting and backdrops, perfect for shooting and recording. The studio is equipped with a variety of backgrounds, props, and professional lighting equipment. It is soundproofed for audio recording and video shoots. The space can accommodate up to 10 people, making it suitable for small teams or solo creators. There is a dressing room and makeup area for talent. The studio offers high-speed WiFi and technical support. The location is central and easy to reach by public transport. Parking is available nearby. The studio is cleaned and sanitized before each session. Additional equipment can be rented upon request. The staff is available to assist with setup and troubleshooting. The studio is wheelchair accessible. Book Multi-purpose Studio for your next creative project and enjoy a professional environment. Contact us for equipment lists or special requirements. We are here to help you achieve your creative goals. Reserve your session today and take your production to the next level.',
+            capacity: 10,
+            area: 60,
+            address: '321 Studio Lane, Creative Park, Metropolis',
+          },
+          {
+            id: 5,
+            name: 'Makers Workshop',
+            type: 'Workshop',
+            price: 25,
+            suitable: ['Handcraft', 'Class'],
+            image: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
+            description: 'Cozy workshop space, ideal for small classes and handcraft activities. The workshop is furnished with large tables, comfortable chairs, and plenty of natural light. It can host up to 15 participants. The space is equipped with basic tools and materials for various crafts. There is a kitchenette for refreshments and breaks. The venue is located in a quiet neighborhood, providing a peaceful environment for learning and creativity. Parking is available nearby. The workshop is wheelchair accessible. Staff can assist with setup and cleanup. The space is cleaned and sanitized before each booking. Book Makers Workshop for your next class or creative session. Contact us for information on available tools and materials. We are dedicated to supporting makers and educators. Reserve your spot today and inspire creativity in a welcoming space.',
+            capacity: 15,
+            area: 40,
+            address: '654 Maker St, Suburbia, Metropolis',
+          },
+          // Generate 45+ more diverse spaces for demo
+          ...Array.from({length: 45}, (_, i) => ({
+            id: 6 + i,
+            name: `Space #${6 + i}`,
+            type: ['Meeting Room', 'Party Space', 'Workshop', 'Exhibition Hall', 'Studio'][Math.floor(Math.random()*5)],
+            price: 20 + Math.floor(Math.random()*80),
+            suitable: ['Meeting', 'Party', 'Workshop', 'Exhibition', 'Recording'].sort(() => 0.5 - Math.random()).slice(0,2),
+            image: `https://source.unsplash.com/600x400/?space,room,interior,${i}`,
+            description: `This is a demo description for Space #${6 + i}. It is a versatile venue suitable for various activities. The space is well-equipped and located in a convenient area. Book now for a great experience!` + ' '.repeat(800),
+            capacity: 10 + Math.floor(Math.random()*100),
+            area: 30 + Math.floor(Math.random()*200),
+            address: `${100 + i} Demo Ave, District ${i%10}, Metropolis`,
+          })),
+        ],
+        selectedSpace: {},
+        extraServices: [
+          { id: 1, name: 'Catering', price: 20 },
+          { id: 2, name: 'Photography', price: 30 },
+          { id: 3, name: 'Cleaning', price: 15 },
+        ],
+        selectedServices: [],
+        bookingDate: '',
+        bookingTime: '',
+        bookingHours: 1,
+        totalPrice: 0,
+        filteredSpaces() {
+          return this.spaces.filter(space => {
+            const matchType = this.filterType ? space.type === this.filterType : true;
+            const matchSearch = this.search ? (space.name.toLowerCase().includes(this.search.toLowerCase()) || space.type.toLowerCase().includes(this.search.toLowerCase()) || space.suitable.join(',').toLowerCase().includes(this.search.toLowerCase())) : true;
+            return matchType && matchSearch;
+          });
+        },
+        viewDetails(space) {
+          this.selectedSpace = space;
+          this.selectedServices = [];
+          this.bookingDate = '';
+          this.bookingTime = '';
+          this.bookingHours = 1;
+          this.page = 'detail';
+        },
+        toggleService(id) {
+          if (this.selectedServices.includes(id)) {
+            this.selectedServices = this.selectedServices.filter(sid => sid !== id);
+          } else {
+            this.selectedServices.push(id);
+          }
+        },
+        bookSpace() {
+          // Calculate total price
+          let base = this.selectedSpace.price * this.bookingHours;
+          let extra = this.selectedServices.reduce((sum, id) => {
+            const service = this.extraServices.find(s => s.id === id);
+            return sum + (service ? service.price : 0);
+          }, 0);
+          this.totalPrice = base + extra;
+          this.page = 'success';
+        },
+        resetApp() {
+          this.page = 'home';
+          this.search = '';
+          this.filterType = '';
+          this.showShare = false;
+        },
+        shareBooking() {
+          this.showShare = !this.showShare;
+          const url = encodeURIComponent(window.location.href);
+          const title = encodeURIComponent('Check out this space on ZZZone: ' + this.selectedSpace.name);
+          const text = encodeURIComponent('I just booked ' + this.selectedSpace.name + ' on ZZZone!');
+          this.shareLinks = {
+            wechat: 'https://wx.qq.com/',
+            qq: 'https://connect.qq.com/widget/shareqq/index.html?url='+url+'&title='+title+'&desc='+text,
+            weibo: 'https://service.weibo.com/share/share.php?url='+url+'&title='+title,
+            twitter: 'https://twitter.com/intent/tweet?url='+url+'&text='+title,
+            facebook: 'https://www.facebook.com/sharer/sharer.php?u='+url,
+          };
+          if (navigator.share) {
+            navigator.share({ title: title, text: text, url: window.location.href });
+          }
+        },
+      }
+    }
+  </script>
+</body>
+</html> 
